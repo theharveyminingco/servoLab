@@ -1,0 +1,163 @@
+#include <IRremote.h>
+#include <Servo.h>
+//END INCLUDES
+
+//THIS SECTION IS TO DEFINE GLOBAL CONSTANTS/VARIABLES/OBJECTS
+//SET UP SERVOS, THEN SET UP IR
+
+//create servo objects
+Servo base;  
+Servo bicep;
+Servo elbow;
+Servo wrist;
+Servo claw;
+
+// create and define the "home position" for each joint
+int baseHome = 90;    // pos0 is base - var to store servo init angle 
+int bicepHome = 90;    // pos1 is bicep -90 degrees allows equal movement L or R
+int elbowHome = 90;    // pos2 is elbow
+int wristHome = 90;    // pos3 is wrist
+int opened = 0;     // this is the claw, 0 equals open
+int closed = 180;
+
+int location; //USED TO STORE AND ASSIGN VALUES TO SERVO POSITIONS
+int move_size = 7;
+
+//SET UP IR RECIEVER
+int RECV_PIN = 11;
+unsigned long key_value = 0;
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
+void setup() {
+//attach the servos to the in/out pins of arduino 
+base.attach(2);  // attaches the servo on pin 2 to the servo object
+bicep.attach(4); // Sets each servo as a  joint for eazy coding thought
+elbow.attach(6);
+wrist.attach(8);
+claw.attach(10);
+  
+//TELL SERVOS TO GO TO THEIR DEFINED HOME POSITIONS
+base.write(baseHome); 
+bicep.write(bicepHome); // all positions are 90 to allow range of motion 
+elbow.write(elbowHome);
+wrist.write(wristHome);
+claw.write(opened);
+
+//RECEIVER 
+Serial.begin(9600);
+irrecv.enableIRIn();
+irrecv.blink13(true);
+
+}
+// So far all servos are attached and initialized at base 90 values (that could change)
+
+//MAIN PROGRAM HERE
+void loop(){
+  if (irrecv.decode(&results)){
+        Serial.println(results.value, HEX);
+        switch(results.value) { //use remote keypress code as switch
+       
+        case 0XFF02FD: // PLAY BUTTON - Home all
+          key_value = results.value;
+          base.write(baseHome); 
+          bicep.write(bicepHome); // all positions are 90 to allow range of motion 
+          elbow.write(elbowHome);
+          wrist.write(wristHome);
+          claw.write(opened);
+          delay(200);
+          break;
+
+        case 0XFF9867: // EQ BUTTON - close claw
+          key_value = results.value;
+          claw.write(closed);
+          delay(200);
+          break;
+        
+        case 0XFFB04F: // ST/RPT button - open claw
+          key_value = results.value;
+          claw.write(opened);
+          delay(200);
+          break;
+
+        case 0XFF30CF: // 1 BUTTON - bicep +
+          key_value = results.value;
+          location = bicep.read() + move_size;
+          bicep.write(location);
+          delay(200);
+          break;
+
+        case 0XFF18E7: // 2 BUTTON - elbow +
+          key_value = results.value;
+          location = elbow.read() + move_size;
+          elbow.write(location);
+          delay(200);
+          break;
+
+        case 0XFF7A85: //3 BUTTON - wrist +
+          key_value = results.value;
+          location = wrist.read() + move_size;
+          wrist.write(location);
+          delay(200);
+          break;
+
+        case 0XFF10EF: // 4 BUTTON - bicep - 
+          key_value = results.value;
+          location = bicep.read() - move_size;
+          bicep.write(location);
+          delay(200);
+          break;
+
+        case 0XFF38C7: // 5 BUTTON - elbow -
+          key_value = results.value;
+          location = elbow.read() - move_size;
+          elbow.write(location);
+          delay(200);
+          break;
+
+        case 0XFF5AA5: //6 BUTTON wrist -
+          key_value = results.value;
+          key_value = results.value;
+          location = wrist.read() - move_size;
+          wrist.write(location);
+          delay(200);
+          break;
+
+        case 0XFF42BD: //7 BUTTON rotate - (ccw)
+          key_value = results.value;
+          location = base.read() - move_size;
+          base.write(location);
+          delay(200);
+          break;
+          
+        case 0XFF4AB5: //8 BUTTON - base home
+          key_value = results.value;
+          base.write(baseHome);
+          delay(200);
+          break;
+
+        case 0XFF52AD: //9 BUTTON rotate + (cw)
+          key_value = results.value;
+          location = base.read() + move_size;
+          base.write(location);
+          delay(200);
+          break;
+
+        default:
+          if (results.value == 0XFFFFFFFF)
+          results.value = key_value;
+        
+        }
+       
+        
+        irrecv.resume();
+  }
+delay(200);
+}
+
+//MAIN PROGRAM HERE
+
+
+
+
+
